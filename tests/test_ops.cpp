@@ -43,3 +43,24 @@ TEST_CASE("testing softmax") {
     float rtol = 1.3e-6;
     CHECK(compare(actual.data(), expected, size, atol, rtol));
 }
+TEST_CASE("testing rope") {
+    std::vector<float> data =
+        read("/home/darklord/Work/Projects/llama/testdata/rope.bin");
+    float *xq = data.data();
+    float *xk = data.data() + 16 * 4 * 8;
+    const float *xq_r = data.data() + 16 * 4 * 8 + 16 * 2 * 8;
+    const float *xk_r = data.data() + 2 * 16 * 4 * 8 + 16 * 2 * 8;
+    const float *cp = data.data() + 2 * 16 * 4 * 8 + 2 * 16 * 2 * 8;
+    const float *sp =
+        data.data() + 2 * 16 * 4 * 8 + 2 * 16 * 2 * 8 + 16 * 4;
+    std::vector<float> c(16*4);
+    std::vector<float> s(16*4);
+    float atol = 3e-5;
+    float rtol = 1.3e-6;
+    precompute_freq_cis(8, 16, c.data(), s.data());
+    CHECK(compare(c.data(), cp, 16 * 4, atol, rtol));
+    CHECK(compare(s.data(), sp, 16 * 4, atol, rtol));
+    rope(xq, xk, c.data(), s.data(), 16, 4, 2, 8);
+    CHECK(compare(xq, xq_r, 16 * 4 * 8, atol, rtol));
+    CHECK(compare(xk, xk_r, 16 * 2 * 8, atol, rtol));
+}

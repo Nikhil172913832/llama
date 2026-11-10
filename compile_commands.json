@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/darklord/Work/Projects/llama/build",
+  "command": "/usr/bin/g++  -I/home/darklord/Work/Projects/llama/include -g -o CMakeFiles/ops.dir/src/ops.cpp.o -c /home/darklord/Work/Projects/llama/src/ops.cpp",
+  "file": "/home/darklord/Work/Projects/llama/src/ops.cpp",
+  "output": "CMakeFiles/ops.dir/src/ops.cpp.o"
+},
+{
+  "directory": "/home/darklord/Work/Projects/llama/build/tests",
+  "command": "/usr/bin/g++  -I/home/darklord/Work/Projects/llama/include -g -o CMakeFiles/test_ops.dir/test_ops.cpp.o -c /home/darklord/Work/Projects/llama/tests/test_ops.cpp",
+  "file": "/home/darklord/Work/Projects/llama/tests/test_ops.cpp",
+  "output": "tests/CMakeFiles/test_ops.dir/test_ops.cpp.o"
+},
+{
+  "directory": "/home/darklord/Work/Projects/llama/build/tests",
+  "command": "/usr/bin/g++  -I/home/darklord/Work/Projects/llama/include -g -o CMakeFiles/test_ops.dir/test_utils.cpp.o -c /home/darklord/Work/Projects/llama/tests/test_utils.cpp",
+  "file": "/home/darklord/Work/Projects/llama/tests/test_utils.cpp",
+  "output": "tests/CMakeFiles/test_ops.dir/test_utils.cpp.o"
+}
+]

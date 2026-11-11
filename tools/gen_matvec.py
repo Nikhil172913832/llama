@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import torch
 
@@ -7,4 +9,4 @@ x = torch.randn(288)
 out = torch.matmul(w, x)
 np.concatenate([x.numpy(), w.contiguous().flatten().numpy(), out.numpy()]).astype(
     np.float32
-).tofile("../testdata/matvec.bin")
+).tofile(Path(__file__).parent.parent / "testdata/matvec.bin")

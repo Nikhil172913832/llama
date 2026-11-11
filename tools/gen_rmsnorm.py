@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import torch
 
@@ -12,4 +14,4 @@ np.concatenate(
         w.numpy(),
         out.contiguous().flatten().numpy(),
     ]
-).astype(np.float32).tofile("rmsnorm.bin")
+).astype(np.float32).tofile(Path(__file__).parent.parent / "testdata/rmsnorm.bin")

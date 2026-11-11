@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -14,4 +15,4 @@ np.concatenate(
         x.contiguous().flatten().numpy(),
         softX.contiguous().flatten().numpy(),
     ]
-).astype(np.float32).tofile("softmax.bin")
+).astype(np.float32).tofile(Path(__file__).parent.parent / "testdata/softmax.bin")

@@ -13,5 +13,8 @@ void precompute_freq_cis(const int head_dim, const int max_seq_len, float* c,
                          float* s);
 void embed(const float* table, float* out, int token_id, int dim);
 void swiglu(const float* up, float* gate, int n);
-void accum(const float* b, float* a, int n);
+void accum(float* a, const float* b, int n);
+void attention(const float* k_cache, const float* v_cache, const float* q,
+               float* scores, float* out, const int pos, const int n_heads,
+               const int n_kv_heads, const int head_dim, const int max_seq_len);
 }  // namespace llama

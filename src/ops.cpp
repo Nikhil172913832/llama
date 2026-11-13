@@ -103,9 +103,37 @@ void swiglu(const float* up, float* gate, int n) {
     }
 }
 
-void accum(const float* b, float* a, int n) {
+void accum(float* a, const float* b, int n) {
     for (int i = 0; i < n; i++) {
         a[i] += b[i];
+    }
+}
+
+void attention(const float* k_cache, const float* v_cache, const float* q, float* scores, float* out, const int pos, const int n_heads, const int n_kv_heads, const int head_dim, const int max_seq_len) {
+    int n_rep = n_heads/n_kv_heads;
+    float scaling_factor = sqrtf((float)head_dim);
+    for(int i = 0; i<n_heads; i++){
+        const float* q_vec = q + i*head_dim;
+        int kv_head_index = i/n_rep;
+        int kv_offset = kv_head_index*max_seq_len*head_dim;
+        const float* k_head = k_cache + kv_offset;
+        const float* v_head = v_cache + kv_offset;
+        for(int j = 0; j<pos+1; j++){
+            const float* k_vec = k_head + j*head_dim;
+            matvec(q_vec, k_vec, scores+j, 1, head_dim);
+            scores[j]/=scaling_factor;
+        }
+        softmax(scores, pos+1);
+        float* out_head = out+i*head_dim;
+        for(int j = 0; j<head_dim; j++){
+            out_head[j] = 0.f;
+        }
+        for(int j = 0; j<pos+1; j++){
+            const float* row = v_head+ j*head_dim;
+            for(int k = 0; k<head_dim; k++){
+                out_head[k] += row[k]*scores[j];
+            }
+        }
     }
 }
 }  // namespace llama

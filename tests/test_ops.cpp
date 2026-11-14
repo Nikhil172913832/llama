@@ -81,18 +81,18 @@ TEST_CASE("testing swiglu") {
     const float rtol = 1.3e-6;
     CHECK(compare(x, x_s, 5 * 4, atol, rtol));
 }
-TEST_CASE("testing attention"){
+TEST_CASE("testing attention") {
     std::filesystem::path p =
         std::filesystem::path(TEST_DATA_DIR) / "attention.bin";
     std::vector<float> data = read(p);
     float* k_cache = data.data();
-    float* v_cache = data.data() + 2*16*8;
-    float* q = data.data() + 2*2*16*8;
-    float* outp = data.data() + 2*2*16*8 + 4*8;
-    std::vector<float> out(4*8);
+    float* v_cache = data.data() + 2 * 16 * 8;
+    float* q = data.data() + 2 * 2 * 16 * 8;
+    float* outp = data.data() + 2 * 2 * 16 * 8 + 4 * 8;
+    std::vector<float> out(4 * 8);
     std::vector<float> scores(6);
     const float atol = 1e-5;
     const float rtol = 1.3e-6;
-    attention(k_cache, v_cache, q, scores.data(),out.data(), 5, 4, 2, 8, 16);
-    CHECK(compare(out.data(), outp, 4*8, atol, rtol));
+    attention(k_cache, v_cache, q, scores.data(), out.data(), 5, 4, 2, 8, 16);
+    CHECK(compare(out.data(), outp, 4 * 8, atol, rtol));
 }

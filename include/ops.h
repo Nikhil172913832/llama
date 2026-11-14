@@ -17,4 +17,4 @@ void accum(float* a, const float* b, int n);
 void attention(const float* k_cache, const float* v_cache, const float* q,
                float* scores, float* out, const int pos, const int n_heads,
                const int n_kv_heads, const int head_dim, const int max_seq_len);
-}  // namespace llama
+}  // namespace ops

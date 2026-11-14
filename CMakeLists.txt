@@ -7,11 +7,13 @@ project(inference_engine
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(ops
+add_library(engine
     src/ops.cpp
+    src/mem.cpp
+    src/model.cpp
 )
 
-target_include_directories(ops
+target_include_directories(engine
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

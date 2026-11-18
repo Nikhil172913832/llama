@@ -10,7 +10,7 @@ MemoryArena::MemoryArena(size_t n) {
     cursor = 0;
 }
 float* MemoryArena::alloc(size_t n) {
-    if(cursor + n <= storage.size()){
+    if (cursor + n > storage.size()) {
         throw std::runtime_error("Arena out of memory");
     }
     float* result = storage.data() + cursor;

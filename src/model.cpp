@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <filesystem>
 #include <stdexcept>
 #include <vector>
 
@@ -68,7 +69,7 @@ void forward(const Config& config, const Weights& weights, RunState& state,
                       config.dim);
     }
 }
-void Engine::mm_weights(const std::string& checkpoint_path) {
+void Engine::mm_weights(const std::filesystem::path& checkpoint_path) {
     fd = open(checkpoint_path.c_str(), O_RDONLY);
     if (fd < 0) {
         throw std::runtime_error("file not found");
@@ -149,7 +150,7 @@ void Engine::mm_weights(const std::string& checkpoint_path) {
         weights.wcls = weights_p;
     }
 }
-Engine::Engine(const std::string& checkpoint_path) {
+Engine::Engine(const std::filesystem::path& checkpoint_path) {
     fd = -1;
     mmap_data = nullptr;
     file_size = 0;

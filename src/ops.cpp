@@ -1,36 +1,107 @@
 #include "ops.h"
 
+#include <immintrin.h>
+#include <omp.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <vector>
 namespace llama {
+
 void rmsnorm(const float* x, const float* w, float* out, float eps,
-             std::size_t rows, std::size_t ed) {
-    for (int r = 0; r < rows; r++) {
-        const float* xr = x + (std::size_t)r * ed;
-        float* outr = out + (std::size_t)r * ed;
-        float ss = 0.f;
-        for (int k = 0; k < ed; k++) {
-            ss += xr[k] * xr[k];
+             std::size_t rows, std::size_t dim) {
+    std::size_t vec_dim = dim - (dim % 32);
+    for (int i = 0; i < rows; i++) {
+        const float* xr = x + (std::size_t)i * dim;
+        float* outr = out + (std::size_t)i * dim;
+        __m256 acc0 = _mm256_setzero_ps();
+        __m256 acc1 = _mm256_setzero_ps();
+        __m256 acc2 = _mm256_setzero_ps();
+        __m256 acc3 = _mm256_setzero_ps();
+        for (int j = 0; j < vec_dim; j += 32) {
+            __m256 xr_vec = _mm256_loadu_ps(xr + j);
+            acc0 = _mm256_fmadd_ps(xr_vec, xr_vec, acc0);
+            xr_vec = _mm256_loadu_ps(xr + j + 8);
+            acc1 = _mm256_fmadd_ps(xr_vec, xr_vec, acc1);
+            xr_vec = _mm256_loadu_ps(xr + j + 16);
+            acc2 = _mm256_fmadd_ps(xr_vec, xr_vec, acc2);
+            xr_vec = _mm256_loadu_ps(xr + j + 24);
+            acc3 = _mm256_fmadd_ps(xr_vec, xr_vec, acc3);
         }
-        float rms = sqrtf(ss / ed + eps);
-        for (int k = 0; k < ed; k++) {
-            outr[k] = (xr[k] / rms) * w[k];
+        acc0 =
+            _mm256_add_ps(_mm256_add_ps(acc0, acc1), _mm256_add_ps(acc2, acc3));
+        float buf[8];
+        _mm256_storeu_ps(buf, acc0);
+        float ss = buf[0] + buf[1] + buf[2] + buf[3] + buf[4] + buf[5] +
+                   buf[6] + buf[7];
+        for (int j = vec_dim; j < dim; j++) {
+            ss += xr[j] * xr[j];
+        }
+        float rms = sqrtf(ss / dim + eps);
+        __m256 scale_vec = _mm256_set1_ps(1 / rms);
+        for (int j = 0; j < vec_dim; j += 32) {
+            __m256 xr_vec = _mm256_loadu_ps(xr + j);
+            __m256 weight_vec = _mm256_loadu_ps(w + j);
+            __m256 result =
+                _mm256_mul_ps(_mm256_mul_ps(xr_vec, scale_vec), weight_vec);
+            _mm256_storeu_ps(outr + j, result);
+            xr_vec = _mm256_loadu_ps(xr + j + 8);
+            weight_vec = _mm256_loadu_ps(w + j + 8);
+            result =
+                _mm256_mul_ps(_mm256_mul_ps(xr_vec, scale_vec), weight_vec);
+            _mm256_storeu_ps(outr + j + 8, result);
+            xr_vec = _mm256_loadu_ps(xr + j + 16);
+            weight_vec = _mm256_loadu_ps(w + j + 16);
+            result =
+                _mm256_mul_ps(_mm256_mul_ps(xr_vec, scale_vec), weight_vec);
+            _mm256_storeu_ps(outr + j + 16, result);
+            xr_vec = _mm256_loadu_ps(xr + j + 24);
+            weight_vec = _mm256_loadu_ps(w + j + 24);
+            result =
+                _mm256_mul_ps(_mm256_mul_ps(xr_vec, scale_vec), weight_vec);
+            _mm256_storeu_ps(outr + j + 24, result);
+        }
+        for (int j = vec_dim; j < dim; j++) {
+            outr[j] = (xr[j] / rms) * w[j];
         }
     }
 }
-
 void matvec(const float* x, const float* w, float* out, std::size_t rows,
             std::size_t cols) {
+    std::size_t vec_cols = cols - (cols % 32);
+#pragma omp parallel for schedule(static) if (rows >= 32)
     for (std::size_t i = 0; i < rows; i++) {
-        float temp = 0.f;
         const float* row = w + i * cols;
-        for (std::size_t j = 0; j < cols; j++) {
-            temp += row[j] * x[j];
+        __m256 acc0 = _mm256_setzero_ps();
+        __m256 acc1 = _mm256_setzero_ps();
+        __m256 acc2 = _mm256_setzero_ps();
+        __m256 acc3 = _mm256_setzero_ps();
+        for (std::size_t j = 0; j < vec_cols; j += 32) {
+            __m256 w_vec = _mm256_loadu_ps(row + j);
+            __m256 x_vec = _mm256_loadu_ps(x + j);
+            acc0 = _mm256_fmadd_ps(w_vec, x_vec, acc0);
+            w_vec = _mm256_loadu_ps(row + j + 8);
+            x_vec = _mm256_loadu_ps(x + j + 8);
+            acc1 = _mm256_fmadd_ps(w_vec, x_vec, acc1);
+            w_vec = _mm256_loadu_ps(row + j + 16);
+            x_vec = _mm256_loadu_ps(x + j + 16);
+            acc2 = _mm256_fmadd_ps(w_vec, x_vec, acc2);
+            w_vec = _mm256_loadu_ps(row + j + 24);
+            x_vec = _mm256_loadu_ps(x + j + 24);
+            acc3 = _mm256_fmadd_ps(w_vec, x_vec, acc3);
         }
-        out[i] = temp;
+        acc0 =
+            _mm256_add_ps(_mm256_add_ps(acc0, acc1), _mm256_add_ps(acc2, acc3));
+        float buf[8];
+        _mm256_storeu_ps(buf, acc0);
+        float sum = buf[0] + buf[1] + buf[2] + buf[3] + buf[4] + buf[5] +
+                    buf[6] + buf[7];
+        for (std::size_t j = vec_cols; j < cols; j++) {
+            sum += row[j] * x[j];
+        }
+        out[i] = sum;
     }
 }
 
@@ -107,7 +178,26 @@ void swiglu(const float* up, float* gate, std::size_t n) {
 }
 
 void accum(float* a, const float* b, std::size_t n) {
-    for (std::size_t i = 0; i < n; i++) {
+    std::size_t vec_n = n - (n % 32);
+    for (std::size_t i = 0; i < vec_n; i += 32) {
+        __m256 a_vec = _mm256_loadu_ps(a + i);
+        __m256 b_vec = _mm256_loadu_ps(b + i);
+        __m256 result = _mm256_add_ps(a_vec, b_vec);
+        _mm256_storeu_ps(a + i, result);
+        a_vec = _mm256_loadu_ps(a + i + 8);
+        b_vec = _mm256_loadu_ps(b + i + 8);
+        result = _mm256_add_ps(a_vec, b_vec);
+        _mm256_storeu_ps(a + i + 8, result);
+        a_vec = _mm256_loadu_ps(a + i + 16);
+        b_vec = _mm256_loadu_ps(b + i + 16);
+        result = _mm256_add_ps(a_vec, b_vec);
+        _mm256_storeu_ps(a + i + 16, result);
+        a_vec = _mm256_loadu_ps(a + i + 24);
+        b_vec = _mm256_loadu_ps(b + i + 24);
+        result = _mm256_add_ps(a_vec, b_vec);
+        _mm256_storeu_ps(a + i + 24, result);
+    }
+    for (std::size_t i = vec_n; i < n; i++) {
         a[i] += b[i];
     }
 }

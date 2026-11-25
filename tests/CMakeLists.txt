@@ -3,6 +3,7 @@ add_executable(llama_tests
     test_utils.cpp
     test_mem.cpp
     test_model.cpp
+    test_tokenizer.cpp
 )
 
 target_link_libraries(llama_tests

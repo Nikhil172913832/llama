@@ -1,8 +1,8 @@
 #pragma once
 #include <cstddef>
+#include <filesystem>
 #include <functional>
 #include <optional>
-#include <string>
 #include <vector>
 
 #include "mem.h"
@@ -55,7 +55,7 @@ void forward(const Config& config, const Weights& weights, RunState& state,
              int token_id, std::size_t pos, bool compute_logits = true);
 class Engine {
    public:
-    Engine(const std::string& checkpoint_path);
+    Engine(const std::filesystem::path& checkpoint_path);
     ~Engine();
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
@@ -71,6 +71,6 @@ class Engine {
     void* mmap_data;
     std::size_t file_size;
     void carve_run_state();
-    void mm_weights(const std::string& checkpoint_path);
+    void mm_weights(const std::filesystem::path& checkpoint_path);
 };
 }  // namespace llama
